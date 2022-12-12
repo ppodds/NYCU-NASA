@@ -1,0 +1,19 @@
+#!/bin/sh
+
+domain="$1"
+base="/home/judge/hw4/4-3/"
+
+cd "$base"
+nohup pnpm start > "${base}log.txt" 2>&1 &
+echo "sleep to wait for server to start"
+sleep 5
+sudo REQUESTS_CA_BUNDLE="${base}data/rootca.pem" \
+    certbot certonly -n --standalone -d "$domain" \
+    --server https://ca.nasa.nycu:9000/acme/acme/directory \
+    --agree-tos --email ppodds@g.ncu.edu.tw
+echo "domain: $domain"
+sudo "${base}src/set-config.sh" "$domain" "$base"
+sudo "${base}src/edit-hosts.sh" "$domain"
+sudo service nginx onestart
+echo "check if server is up"
+curl -k "https://$domain/"

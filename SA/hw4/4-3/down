@@ -1,0 +1,15 @@
+#!/bin/sh
+sudo service nginx onestop
+sudo rm -f /usr/local/etc/nginx/sites-enabled/*
+
+while true; do
+    pid_list=$(ps aux | grep 'node' | awk '{printf $2"\n"}')
+    line=$(echo -e "$pid_list" | wc -l)
+    if [ $line -le 1 ]; then
+        break
+    fi
+    pid=$(echo "$pid_list" | head -n 1)
+    echo "killing $pid"
+    sudo kill "$pid"
+done
+
