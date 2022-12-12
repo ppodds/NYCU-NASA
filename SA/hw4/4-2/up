@@ -8,8 +8,8 @@ sudo REQUESTS_CA_BUNDLE="${base}data/rootca.pem" \
     --server https://ca.nasa.nycu:9000/acme/acme/directory \
     --agree-tos --email ppodds@g.ncu.edu.tw
 echo "domain: $domain"
-sudo "$base/src/set-config.sh" "$domain" "$base"
-sudo "$base/src/edit-hosts.sh" "$domain"
+sudo "${base}src/set-config.sh" "$domain" "$base"
+sudo "${base}src/edit-hosts.sh" "$domain"
 sudo service nginx onestart
 echo "check if server is up"
 curl -k "https://$domain/"

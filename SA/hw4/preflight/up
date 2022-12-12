@@ -9,5 +9,5 @@ sudo REQUESTS_CA_BUNDLE="${base}data/rootca.pem" \
     --agree-tos --email ppodds@g.ncu.edu.tw
 echo "config:"
 echo "$config"
-sudo "$base/src/set-config.sh" "$domain" "$base"
+sudo "${base}src/set-config.sh" "$domain" "$base"
 sudo service nginx onestart
