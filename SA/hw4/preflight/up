@@ -1,0 +1,13 @@
+#!/bin/sh
+
+domain="$1"
+base="/home/judge/hw4/preflight/"
+
+sudo REQUESTS_CA_BUNDLE="${base}data/rootca.pem" \
+    certbot certonly -n --standalone -d "$domain" \
+    --server https://ca.nasa.nycu:9000/acme/acme/directory \
+    --agree-tos --email ppodds@g.ncu.edu.tw
+echo "config:"
+echo "$config"
+sudo "$base/src/set-config.sh" "$domain" "$base"
+sudo service nginx onestart
