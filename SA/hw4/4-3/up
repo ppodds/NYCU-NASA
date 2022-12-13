@@ -6,7 +6,7 @@ base="/home/judge/hw4/4-3/"
 cd "$base"
 nohup pnpm start > "${base}log.txt" 2>&1 &
 echo "sleep to wait for server to start"
-sleep 5
+sleep 10
 sudo REQUESTS_CA_BUNDLE="${base}data/rootca.pem" \
     certbot certonly -n --standalone -d "$domain" \
     --server https://ca.nasa.nycu:9000/acme/acme/directory \
