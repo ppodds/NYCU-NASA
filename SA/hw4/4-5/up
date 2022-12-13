@@ -1,0 +1,7 @@
+#!/bin/sh
+
+base="/home/judge/hw4/4-5/"
+source_url="$1"
+secret_key=$(curl -k -X POST "$source_url/json" -H 'Content-Type: application/json' -d '{"keyword": "give_me_secret_key"}' | jq '.secretKey' | tr -d '"')
+curl -k -X POST "$source_url/urlencoded" -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode "secretKey=$secret_key" > "$base/secret.txt"
+curl -k -X POST -F "secretFile=@\"${base}secret.txt\"" "$source_url/multipart"
