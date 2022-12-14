@@ -1,0 +1,10 @@
+#!/bin/sh 
+
+. /etc/rc.subr 
+
+name="ftp_watchd" 
+command="/usr/local/sbin/pure-uploadscript"
+ftp_watchd_flags="-B -r /usr/local/etc/uploadscript.sh"
+
+load_rc_config $name 
+run_rc_command "$1"

@@ -1,0 +1,120 @@
+#!/bin/sh
+usage="Usage:
+- create: zfsbak DATASET [ROTATION_CNT]
+- list: zfsbak -l|--list [DATASET|ID|DATASET ID]
+- delete: zfsbak -d|--delete [DATASET|ID|DATASET ID...]
+- export: zfsbak -e|--export DATASET [ID]
+- import: zfsbak -i|--import FILENAME DATASET"
+
+usage() {
+	echo "$usage"
+	exit 0
+}
+
+# $1 -> DATASET|ID|DATASET ID
+snapshot_list() {
+	zfs list -rt snapshot -o name -s creation $1 | sed 1d
+}
+
+is_digit() {
+	if [ ! -z "${1##*[!0-9]*}" ] ; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+zfsbak_list() {
+	is_digit $1
+	local one_is_digit=$?
+	is_digit $2
+	local two_is_digit=$?
+	if [ $one_is_digit -eq 1 ] ; then
+		local list=$(snapshot_list $1)
+	else
+		local list=$(snapshot_list)
+	fi
+	local thead=$(echo "ID DATASET TIME")
+	if [ -z "$list" ] ; then
+		local tbody=''
+	else
+		local tbody=$(echo "$list" | awk '{split($0, a, "@"); printf("%s %s %s\n", NR, a[1], a[2])}')
+	fi
+	eol=$'\n'
+	if [ $# -eq 1 ] ; then
+		if [ $one_is_digit -eq 0 ] && [ $1 -ne 0 ] ; then
+			local tbody=$(echo "$tbody" | sed -n "$1p")
+		else
+			local tbody=$(echo "$tbody" | grep -E "[0-9]+ $1 .*")
+		fi
+	elif [ $# -eq 2 ] ; then
+		local tbody=$(echo "$tbody" | grep -E "$2 $1 .*")
+	fi
+	table="$thead$eol$tbody"
+	printf "$table\n" | column -t
+}
+
+zfsbak_export() {
+	local target=$(zfsbak_list $1 $2 | sed 1d | awk '{printf("%s@%s\n", $2, $3)}')
+	local processed_target=$(echo "$target" | sed "s/\//_/g")
+	local export_path=~/"$processed_target.zst.gpg"
+	mkdir -p $(dirname export_path)
+	zfs send "$target" | zstd | gpg -e -r ta@nasa.cs.nctu.edu.tw -o "$export_path" --trust-model always --batch --yes --no-tty && echo "Export $target to $export_path"
+}
+
+zfsbak_import() {
+	zstd -d < $1 | zfs recv -F "$2"@"$(date '+%Y-%m-%d-%H:%M:%S')" && echo "Import $1 to $2"
+}
+
+if [ $# -eq 0 ]; then
+	usage
+fi
+
+if [ "$1" = "-l" ] || [ "$1" = "--list" ] ; then
+	if [ $# -le 2 ] ; then
+		zfsbak_list $2
+	else
+		zfsbak_list $2 $3
+	fi
+elif [ "$1" = "-d" ] || [ "$1" = "--delete" ] ; then
+	list=$(zfsbak_list $2 | sed 1d)
+	if [ $# -le 2 ] ; then
+		item=$(printf "$list\n" | awk '{printf("%s@%s\n", $2, $3)}')
+		printf "$item\n" | xargs -I snapshot sh -c 'zfs destroy snapshot && echo Destroy snapshot'
+	else
+		for id in "$@" ; do
+			if [ "$id" = "$1" ] || [ "$id" = "$2" ] ; then
+				continue
+			fi
+			item=$(printf "$list\n" | grep "$id " | awk '{printf("%s@%s\n", $2, $3)}')
+			printf "$item\n" | xargs -I snapshot sh -c 'zfs destroy snapshot && echo Destroy snapshot'
+		done
+	fi
+elif [ "$1" = "-e" ] || [ "$1" = "--export" ] ; then
+	if [ -z "$2" ] ; then
+		usage
+	fi
+	if [ -z "$3" ] ; then
+		zfsbak_export $2 1
+	else
+		zfsbak_export $2 $3
+	fi
+elif [ "$1" = "-i" ] || [ "$1" = "--import" ] ; then
+	if [ $# -ne 3 ] ; then
+		usage
+	fi
+	zfsbak_import $2 $3
+else
+	timestamp=$(date "+%Y-%m-%d-%T")
+	zfs snapshot "$1"@"$timestamp" && echo "Snap $1@$timestamp"	
+	list=$(snapshot_list $1 | grep "$1")
+	rotation_count=$2
+	if [ -z "$rotation_count" ] ; then
+		rotation_count=12
+	fi
+	snapshot_count=$(($(echo "$list" | sed 1d | wc -l | tr -d ' ')+1))
+	delete_count=$(($snapshot_count - $rotation_count))
+	if [ $delete_count -gt 0 ] ; then
+		echo "$list"  | head -n "$delete_count" | xargs -I snapshot sh -c 'zfs destroy snapshot && echo Destroy snapshot'
+	fi
+fi
