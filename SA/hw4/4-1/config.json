@@ -1,0 +1,13 @@
+{
+  "secret": "test",
+  "users": [
+    {
+      "username": "test",
+      "password": "$2b$10$DeO8d5emsJE1hoXkv.q3j.Oyu2GH/dp7.8Wl4Oze6/H8LNpqjRf5."
+    },
+    {
+      "username": "a",
+      "password": "$2b$10$DeO8d5emsJE1hoXkv.q3j.Oyu2GH/dp7.8Wl4Oze6/H8LNpqjRf5."
+    }
+  ]
+}

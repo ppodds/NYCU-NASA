@@ -1,0 +1,43 @@
+#!/bin/sh
+base="/home/judge/hw4/4-1/"
+
+cd "$base"
+echo "reading arguments"
+config='{"secret": "", "users": []}'
+# read the options
+while getopts ":d:p:u:" op ; do
+    case $op in
+        d)
+            domain="$OPTARG"
+            echo "domain: $domain"
+        ;;
+        p)
+            secret="$OPTARG"
+            echo "secret: $secret"
+            config=$(echo -e "$config" | jq ".secret |= \"$secret\"")
+        ;;
+        u)
+            user=$(echo "$OPTARG" | cut -d ':' -f 1)
+            pass=$(echo "$OPTARG" | cut -d ':' -f 2)
+            config=$(echo -e "$config" | jq ".users |= .+ [{\"username\": \"$user\", \"password\": \"$pass\"}]")
+        ;;
+        ?)
+            echo "unknown option: $OPTARG"
+            exit 1
+        ;;
+    esac
+done
+echo -e "$config" > "${base}config.json"
+nohup pnpm start > "${base}log.txt" 2>&1 &
+echo "sleep to wait for server to start"
+sleep 10
+echo "domain: $domain"
+sudo REQUESTS_CA_BUNDLE="${base}data/rootca.pem" \
+    certbot certonly -n --standalone -d "$domain" \
+    --server https://ca.nasa.nycu:9000/acme/acme/directory \
+    --agree-tos --email ppodds@g.ncu.edu.tw
+sudo "${base}src/set-config.sh" "$domain" "$base"
+sudo "${base}src/edit-hosts.sh" "$domain"
+sudo service nginx onestart
+echo "check if server is up"
+curl -k "https://$domain/"
