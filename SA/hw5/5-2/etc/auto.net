@@ -1,0 +1,2 @@
+public -ro,intr,nfsv4 10.113.49.2:/vol/public
+stu49 -rw,intr,nfsv4 10.113.49.2:/vol/stu49

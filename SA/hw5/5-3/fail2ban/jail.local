@@ -1,0 +1,5 @@
+bantime = 1m
+findtime = 1m
+maxretry = 3
+
+banaction = pf

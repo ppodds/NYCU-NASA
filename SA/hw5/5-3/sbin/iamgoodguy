@@ -1,0 +1,3 @@
+#!/bin/sh
+ip="$1"
+fail2ban-client unban "$ip"
