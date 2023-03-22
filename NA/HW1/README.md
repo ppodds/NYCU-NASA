@@ -56,6 +56,12 @@ sudo sysctl -p
 iptables -t nat -I POSTROUTING -j MASQUERADE
 ```
 
+轉送 VPN 的封包
+
+```shell
+iptables -A FORWARD -i wg0 -o enp0s8 -j ACCEPT
+```
+
 但是 iptables 重開機就會消失，所以要用 `iptables-persistent` 來儲存設定
 
 ```shell
