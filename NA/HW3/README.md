@@ -304,6 +304,29 @@ sudo vim /eetc/spamassassin/local.cf
 rewrite_header Subject *** SPAM ***
 ```
 
+把 amavis 加到 postfix 的 service 底下
+
+```shell
+sudo vim /etc/postfix/master.cf
+```
+
+```conf
+smtp-amavis     unix    -       -       n       -       10      smtp
+        -o smtp_data_done_timeout=1200s
+        -o smtp_never_send_ehlo=yes
+        -o notify_classes=protocol,resource,software
+127.0.0.1:10025 inet    n       -       n       -       -       smtpd
+        -o content_filter=
+        -o mynetworks=127.0.0.0/8
+        -o local_recipient_maps=
+        -o notify_classes=protocol,resource,software
+        -o myhostname=localhost
+        -o smtpd_client_restrictions=
+        -o smtpd_sender_restrictions=
+        -o smtpd_recipient_restrictions=permit_mynetworks,reject
+        -o smtpd_tls_security_level=
+```
+
 ## Outgoing filter
 
 ```shell
